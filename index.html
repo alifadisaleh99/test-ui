@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Market — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0d0f12;
+    --surface:   #13161b;
+    --surface2:  #1a1e25;
+    --border:    #252932;
+    --border2:   #2e3440;
+    --text:      #e8eaf0;
+    --muted:     #6b7180;
+    --faint:     #3a3f4a;
+    --yes:       #4ade80;
+    --yes-dim:   #1a3d28;
+    --yes-glow:  rgba(74,222,128,.12);
+    --no:        #f87171;
+    --no-dim:    #3d1a1a;
+    --no-glow:   rgba(248,113,113,.12);
+    --accent:    #7c6af7;
+    --accent-dim:#1e1a40;
+    --warn:      #fbbf24;
+    --warn-dim:  #3d2e0a;
+    --font-head: 'Syne', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --radius:    10px;
+    --radius-lg: 16px;
+  }
+
+  html { background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 13px; line-height: 1.6; }
+  body { min-height: 100vh; display: flex; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 220px; min-height: 100vh; background: var(--surface);
+    border-right: 1px solid var(--border); padding: 28px 0; flex-shrink: 0;
+    display: flex; flex-direction: column;
+  }
+  .sidebar-logo {
+    font-family: var(--font-head); font-size: 17px; font-weight: 700;
+    color: var(--text); padding: 0 22px 28px; letter-spacing: -.3px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-logo span { color: var(--accent); }
+  .sidebar-nav { padding: 18px 12px; flex: 1; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+    border-radius: var(--radius); color: var(--muted); font-size: 12px;
+    cursor: pointer; transition: all .15s; margin-bottom: 2px;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--accent-dim); color: var(--accent); }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+  .sidebar-footer { padding: 16px 22px; border-top: 1px solid var(--border); }
+  .op-badge {
+    display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--muted);
+  }
+  .op-avatar {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-dim);
+    color: var(--accent); font-size: 10px; font-weight: 600; display: flex;
+    align-items: center; justify-content: center; font-family: var(--font-head);
+  }
+
+  /* ── Main ── */
+  .main { flex: 1; padding: 36px 40px; overflow-y: auto; max-width: 860px; }
+
+  .page-header { margin-bottom: 32px; }
+  .breadcrumb { font-size: 11px; color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .breadcrumb span { color: var(--text); }
+  .page-title { font-family: var(--font-head); font-size: 26px; font-weight: 700; letter-spacing: -.5px; }
+  .page-sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+  /* ── Stepper ── */
+  .stepper { display: flex; gap: 0; margin-bottom: 28px; }
+  .step-item {
+    display: flex; align-items: center; gap: 0; flex: 1;
+  }
+  .step-item:last-child .step-line { display: none; }
+  .step-pill {
+    display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+    border-radius: 24px; cursor: pointer; transition: all .2s; white-space: nowrap;
+    border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+    font-size: 11px; font-weight: 500;
+  }
+  .step-pill.active { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); }
+  .step-pill.done { border-color: var(--yes-dim); background: var(--yes-dim); color: var(--yes); }
+  .step-num { width: 18px; height: 18px; border-radius: 50%; background: var(--faint); display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+  .step-pill.active .step-num { background: var(--accent); color: #fff; }
+  .step-pill.done .step-num { background: var(--yes); color: #0d0f12; font-size: 10px; }
+  .step-line { flex: 1; height: 1px; background: var(--border); margin: 0 6px; }
+
+  /* ── Panels ── */
+  .panel { display: none; }
+  .panel.visible { display: block; animation: fadeUp .2s ease; }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 22px; margin-bottom: 14px; }
+  .section-title {
+    font-family: var(--font-head); font-size: 13px; font-weight: 600;
+    color: var(--muted); text-transform: uppercase; letter-spacing: .8px;
+    margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* ── Fields ── */
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
+  .field input, .field select, .field textarea {
+    width: 100%; background: var(--bg); border: 1px solid var(--border2);
+    border-radius: var(--radius); color: var(--text); font-family: var(--font-mono);
+    font-size: 13px; padding: 10px 12px; outline: none; transition: border-color .15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+  .field textarea { resize: vertical; min-height: 72px; line-height: 1.6; }
+  .field select option { background: var(--bg); }
+  .field .hint { font-size: 11px; color: var(--faint); margin-top: 5px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .grid4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+
+  /* ── Toggle ── */
+  .toggle-group { display: flex; gap: 0; border: 1px solid var(--border2); border-radius: var(--radius); overflow: hidden; }
+  .toggle-opt {
+    flex: 1; padding: 9px 0; text-align: center; font-size: 12px; font-weight: 500;
+    cursor: pointer; color: var(--muted); background: var(--bg); transition: all .15s;
+    border-right: 1px solid var(--border2);
+  }
+  .toggle-opt:last-child { border-right: none; }
+  .toggle-opt.sel-auto { background: var(--yes-dim); color: var(--yes); border-color: transparent; }
+  .toggle-opt.sel-manual { background: var(--accent-dim); color: var(--accent); border-color: transparent; }
+
+  /* ── Sub-config cards ── */
+  .sub-config { border-radius: var(--radius); border: 1px solid var(--border); padding: 16px; margin-top: 14px; display: none; }
+  .sub-config.show { display: block; }
+  .sub-config.auto { border-color: var(--yes-dim); background: rgba(74,222,128,.04); }
+  .sub-config.manual { border-color: #7c6af733; background: rgba(124,106,247,.04); }
+
+  /* ── Price preview card ── */
+  .price-preview {
+    background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 14px; margin-top: 14px;
+  }
+  .price-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .price-row:last-child { border-bottom: none; }
+  .price-label { color: var(--muted); }
+  .price-val { font-weight: 500; }
+  .price-val.yes { color: var(--yes); }
+  .price-val.no { color: var(--no); }
+
+  /* ── Inventory bars ── */
+  .inv-row { margin-bottom: 12px; }
+  .inv-label { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 5px; }
+  .inv-track { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .inv-fill { height: 100%; border-radius: 3px; transition: width .4s; }
+  .yes-fill { background: var(--yes); }
+  .no-fill { background: var(--no); }
+
+  /* ── Fee chips ── */
+  .fee-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .fee-chip {
+    background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px;
+  }
+  .fee-chip-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+  .fee-chip-val { font-size: 18px; font-weight: 500; font-family: var(--font-head); }
+
+  /* ── Review ── */
+  .review-block { margin-bottom: 14px; }
+  .review-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .review-row:last-child { border-bottom: none; }
+  .review-label { color: var(--muted); }
+  .review-val { font-weight: 500; max-width: 55%; text-align: right; }
+
+  .warn-box { background: var(--warn-dim); border: 1px solid #fbbf2444; border-radius: var(--radius); padding: 12px 14px; font-size: 12px; color: var(--warn); margin-top: 10px; line-height: 1.7; }
+  .warn-item::before { content: '⚠ '; }
+
+  /* ── Footer ── */
+  .footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .btn { padding: 10px 22px; border-radius: var(--radius); font-size: 13px; font-weight: 500; cursor: pointer; border: none; font-family: var(--font-mono); transition: all .15s; }
+  .btn:hover { opacity: .85; transform: translateY(-1px); }
+  .btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-publish { background: var(--yes); color: #0d0f12; font-weight: 600; }
+  .btn-save { background: transparent; color: var(--muted); border: 1px solid var(--border); font-size: 12px; padding: 8px 16px; }
+
+  /* ── Step counter ── */
+  .step-counter { font-size: 11px; color: var(--muted); }
+  .step-counter strong { color: var(--text); }
+
+  /* ── Mono tag ── */
+  .mono-tag { font-family: var(--font-mono); font-size: 11px; background: var(--surface2); border: 1px solid var(--border); padding: 2px 7px; border-radius: 4px; color: var(--muted); }
+
+  /* ── Badge ── */
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+  .badge-auto { background: var(--yes-dim); color: var(--yes); }
+  .badge-manual { background: var(--accent-dim); color: var(--accent); }
+  .badge-draft { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+
+  /* ── Checkbox ── */
+  .checkbox-row { display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius); transition: border-color .15s; }
+  .checkbox-row:hover { border-color: var(--border2); }
+  .checkbox-row input { display: none; }
+  .checkbox-box { width: 16px; height: 16px; border: 1px solid var(--border2); border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .15s; font-size: 10px; }
+  .checkbox-row.checked .checkbox-box { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .checkbox-text { font-size: 12px; color: var(--text); }
+  .checkbox-sub { font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">pred<span>ikt</span></div>
+  <nav class="sidebar-nav">
+    <div class="nav-item"><span class="nav-dot"></span>Dashboard</div>
+    <div class="nav-item active"><span class="nav-dot"></span>Markets</div>
+    <div class="nav-item"><span class="nav-dot"></span>Resolutions</div>
+    <div class="nav-item"><span class="nav-dot"></span>Users</div>
+    <div class="nav-item"><span class="nav-dot"></span>Payouts</div>
+    <div class="nav-item"><span class="nav-dot"></span>Settings</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="op-badge">
+      <div class="op-avatar">OP</div>
+      <div>
+        <div style="color:var(--text);font-size:11px">operator</div>
+        <div style="font-size:10px">admin</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+  <div class="page-header">
+    <div class="breadcrumb">Markets <span style="color:var(--faint)">›</span> <span>Create market</span></div>
+    <div class="page-title">Create market</div>
+    <div class="page-sub">Define the question, pricing, and resolution rules for a new binary market.</div>
+  </div>
+
+  <!-- Stepper -->
+  <div class="stepper">
+    <div class="step-item">
+      <div class="step-pill active" id="s1" onclick="goStep(1)">
+        <div class="step-num" id="sn1">1</div>Question
+      </div>
+      <div class="step-line"></div>
+    </div>
+    <div class="step-item">
+      <div class="step-pill" id="s2" onclick="goStep(2)">
+        <div class="step-num" id="sn2">2</div>Shares &amp; pricing
+      </div>
+      <div class="step-line"></div>
+    </div>
+    <div class="step-item">
+      <div class="step-pill" id="s3" onclick="goStep(3)">
+        <div class="step-num" id="sn3">3</div>Timing
+      </div>
+      <div class="step-line"></div>
+    </div>
+    <div class="step-item">
+      <div class="step-pill" id="s4" onclick="goStep(4)">
+        <div class="step-num" id="sn4">4</div>Fees
+      </div>
+      <div class="step-line"></div>
+    </div>
+    <div class="step-item">
+      <div class="step-pill" id="s5" onclick="goStep(5)">
+        <div class="step-num" id="sn5">5</div>Resolution
+      </div>
+      <div class="step-line"></div>
+    </div>
+    <div class="step-item">
+      <div class="step-pill" id="s6" onclick="goStep(6)">
+        <div class="step-num" id="sn6">6</div>Review
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 1: Question -->
+  <div class="panel visible" id="p1">
+    <div class="section">
+      <div class="section-title">Market identity</div>
+      <div class="field">
+        <label>Question</label>
+        <textarea id="f-question" placeholder="Will BTC be higher 5 minutes from now?" rows="2" oninput="sync()"></textarea>
+        <div class="hint">Must resolve unambiguously to YES or NO. Avoid subjective language.</div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>Category</label>
+          <select id="f-cat" oninput="sync()">
+            <option>Crypto</option>
+            <option>Sports</option>
+            <option>Politics</option>
+            <option>Finance</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Visibility</label>
+          <select id="f-vis">
+            <option>Public</option>
+            <option>Unlisted</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Resolution criteria</label>
+        <textarea id="f-criteria" placeholder="Resolves YES if BTC/USD spot price on Binance at T+5min is strictly greater than the recorded price at market open. Source: Binance REST API /api/v3/klines close price." rows="3"></textarea>
+        <div class="hint">Be exact. Ambiguous criteria cause disputes and operator overrides.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Shares & Pricing -->
+  <div class="panel" id="p2">
+    <div class="section">
+      <div class="section-title">YES side</div>
+      <div class="grid2">
+        <div class="field">
+          <label>YES shares</label>
+          <input type="number" id="f-yes-shares" value="1000" min="1" oninput="syncPricing()">
+          <div class="hint">Total YES shares available to sell.</div>
+        </div>
+        <div class="field">
+          <label>YES price per share ($)</label>
+          <input type="number" id="f-yes-price" value="0.84" min="0.01" max="0.99" step="0.01" oninput="syncPricing()">
+          <div class="hint">Fixed Phase 1 sale price.</div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">NO side</div>
+      <div class="grid2">
+        <div class="field">
+          <label>NO shares</label>
+          <input type="number" id="f-no-shares" value="1000" min="1" oninput="syncPricing()">
+        </div>
+        <div class="field">
+          <label>NO price per share ($)</label>
+          <input type="number" id="f-no-price" value="0.17" min="0.01" max="0.99" step="0.01" oninput="syncPricing()">
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Pricing preview</div>
+      <div class="grid2">
+        <div class="inv-row">
+          <div class="inv-label"><span style="color:var(--yes)">YES pool</span><span id="yes-pool-label">$840</span></div>
+          <div class="inv-track"><div class="inv-fill yes-fill" id="yes-pool-bar" style="width:83%"></div></div>
+        </div>
+        <div class="inv-row">
+          <div class="inv-label"><span style="color:var(--no)">NO pool</span><span id="no-pool-label">$170</span></div>
+          <div class="inv-track"><div class="inv-fill no-fill" id="no-pool-bar" style="width:17%"></div></div>
+        </div>
+      </div>
+      <div class="price-preview" id="pricing-preview"></div>
+      <div class="field" style="margin-top:14px">
+        <label>Min spread (Phase 2)</label>
+        <input type="number" id="f-spread" value="0.04" min="0.01" max="0.20" step="0.01" oninput="syncPricing()">
+        <div class="hint">Minimum bid-ask spread enforced in the Phase 2 order book.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Timing -->
+  <div class="panel" id="p3">
+    <div class="section">
+      <div class="section-title">Schedule</div>
+      <div class="grid2">
+        <div class="field">
+          <label>Opens at</label>
+          <input type="datetime-local" id="f-open" oninput="sync()">
+          <div class="hint">Phase 1 trading begins.</div>
+        </div>
+        <div class="field">
+          <label>Locks at</label>
+          <input type="datetime-local" id="f-lock" oninput="sync()">
+          <div class="hint">No new orders after this. Phase 2 also force-closes.</div>
+        </div>
+        <div class="field">
+          <label>Resolves at</label>
+          <input type="datetime-local" id="f-resolve" oninput="sync()">
+          <div class="hint">Oracle fires or operator must submit verdict.</div>
+        </div>
+        <div class="field">
+          <label>Resolution buffer (seconds)</label>
+          <input type="number" id="f-buffer" value="30" min="0" max="300">
+          <div class="hint">Grace period before payout engine runs.</div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Phase 1 controls</div>
+      <div class="field">
+        <label style="margin-bottom:10px">Allow Phase 1 buy cancellation</label>
+        <div class="checkbox-row checked" id="cancel-row" onclick="toggleCancel()">
+          <div class="checkbox-box" id="cancel-box">✓</div>
+          <div>
+            <div class="checkbox-text">ph1_cancel_buy enabled</div>
+            <div class="checkbox-sub">Users can cancel their Phase 1 purchase and receive a full refund. Shares return to inventory.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 4: Fees -->
+  <div class="panel" id="p4">
+    <div class="section">
+      <div class="section-title">Fee structure</div>
+      <div class="fee-grid">
+        <div class="fee-chip">
+          <div class="fee-chip-label">Phase 1 buy fee</div>
+          <div class="fee-chip-val" id="fc-ph1" style="color:var(--yes)">2.0%</div>
+        </div>
+        <div class="fee-chip">
+          <div class="fee-chip-label">Phase 2 buy fee</div>
+          <div class="fee-chip-val" id="fc-ph2b" style="color:var(--accent)">1.0%</div>
+        </div>
+        <div class="fee-chip">
+          <div class="fee-chip-label">Phase 2 sell fee</div>
+          <div class="fee-chip-val" id="fc-ph2s" style="color:var(--accent)">1.0%</div>
+        </div>
+        <div class="fee-chip">
+          <div class="fee-chip-label">Win fee</div>
+          <div class="fee-chip-val" id="fc-win" style="color:var(--warn)">3.0%</div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Configure fees</div>
+      <div class="grid2">
+        <div class="field">
+          <label>ph1_fee (%)</label>
+          <input type="number" id="f-ph1fee" value="2" min="0" max="10" step="0.1" oninput="syncFees()">
+          <div class="hint">Applied on Phase 1 purchase. Charged on top of share cost.</div>
+        </div>
+        <div class="field">
+          <label>ph2_buy_fee (%)</label>
+          <input type="number" id="f-ph2bfee" value="1" min="0" max="5" step="0.1" oninput="syncFees()">
+          <div class="hint">Charged to buyer on Phase 2 fill.</div>
+        </div>
+        <div class="field">
+          <label>ph2_sell_fee (%)</label>
+          <input type="number" id="f-ph2sfee" value="1" min="0" max="5" step="0.1" oninput="syncFees()">
+          <div class="hint">Charged to seller on Phase 2 fill.</div>
+        </div>
+        <div class="field">
+          <label>win_fee (%)</label>
+          <input type="number" id="f-winfee" value="3" min="0" max="10" step="0.1" oninput="syncFees()">
+          <div class="hint">Deducted from payout at settlement.</div>
+        </div>
+      </div>
+      <div class="price-preview" id="fee-example" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <!-- Step 5: Resolution -->
+  <div class="panel" id="p5">
+    <div class="section">
+      <div class="section-title">Resolution type</div>
+      <div class="field">
+        <label style="margin-bottom:8px">Type</label>
+        <div class="toggle-group">
+          <div class="toggle-opt sel-auto" id="t-auto" onclick="setResType('auto')">Automatic</div>
+          <div class="toggle-opt" id="t-manual" onclick="setResType('manual')">Manual</div>
+        </div>
+      </div>
+
+      <div class="sub-config auto show" id="auto-cfg">
+        <div class="grid3">
+          <div class="field">
+            <label>Data source</label>
+            <select id="f-src">
+              <option>Binance BTC/USD</option>
+              <option>Coinbase BTC/USD</option>
+              <option>Chainlink BTC/USD</option>
+              <option>Binance ETH/USD</option>
+              <option>Custom endpoint</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Operator</label>
+            <select id="f-op">
+              <option value="gt">&gt; greater than</option>
+              <option value="lt">&lt; less than</option>
+              <option value="gte">≥ at least</option>
+              <option value="lte">≤ at most</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Reference</label>
+            <select id="f-ref">
+              <option>Price at market open</option>
+              <option>Price at lock time</option>
+              <option>Fixed value</option>
+            </select>
+          </div>
+        </div>
+        <div class="hint" style="margin-top:4px;color:var(--yes)">
+          Resolves YES if: [source] [operator] [reference] at resolve time.
+        </div>
+      </div>
+
+      <div class="sub-config manual" id="manual-cfg">
+        <div class="grid2">
+          <div class="field">
+            <label>Assigned resolver</label>
+            <select id="f-resolver">
+              <option>operator@predikt.io</option>
+              <option>admin@predikt.io</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Resolver deadline</label>
+            <input type="datetime-local" id="f-rdeadline">
+            <div class="hint">Market voids if no verdict by this time.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 6: Review -->
+  <div class="panel" id="p6">
+    <div class="section">
+      <div class="section-title">Review &amp; publish</div>
+      <div class="review-block" id="review-content"></div>
+    </div>
+    <div id="warn-container"></div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="btn btn-ghost" id="btn-back" onclick="nav(-1)" style="visibility:hidden">← Back</button>
+      <span class="step-counter">Step <strong id="step-cur">1</strong> of <strong>6</strong></span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-save" onclick="saveDraft()">Save draft</button>
+      <button class="btn btn-primary" id="btn-next" onclick="nav(1)">Next →</button>
+    </div>
+  </div>
+</main>
+
+<script>
+let step = 1;
+let resType = 'auto';
+let cancelEnabled = true;
+
+function goStep(n) {
+  step = n;
+  for (let i = 1; i <= 6; i++) {
+    const pill = document.getElementById('s' + i);
+    const num = document.getElementById('sn' + i);
+    const panel = document.getElementById('p' + i);
+    pill.className = 'step-pill' + (i === n ? ' active' : i < n ? ' done' : '');
+    num.textContent = i < n ? '✓' : i;
+    panel.className = 'panel' + (i === n ? ' visible' : '');
+  }
+  document.getElementById('btn-back').style.visibility = step > 1 ? 'visible' : 'hidden';
+  const nb = document.getElementById('btn-next');
+  const sc = document.getElementById('step-cur');
+  sc.textContent = step;
+  if (step === 6) { nb.textContent = 'Publish market'; nb.className = 'btn btn-publish'; }
+  else { nb.textContent = 'Next →'; nb.className = 'btn btn-primary'; }
+  if (step === 6) buildReview();
+  if (step === 2) syncPricing();
+  if (step === 4) syncFees();
+}
+
+function nav(dir) {
+  if (step + dir === 7) { publish(); return; }
+  goStep(Math.max(1, Math.min(6, step + dir)));
+}
+
+function setResType(t) {
+  resType = t;
+  document.getElementById('t-auto').className = 'toggle-opt' + (t === 'auto' ? ' sel-auto' : '');
+  document.getElementById('t-manual').className = 'toggle-opt' + (t === 'manual' ? ' sel-manual' : '');
+  document.getElementById('auto-cfg').className = 'sub-config auto' + (t === 'auto' ? ' show' : '');
+  document.getElementById('manual-cfg').className = 'sub-config manual' + (t === 'manual' ? ' show' : '');
+}
+
+function toggleCancel() {
+  cancelEnabled = !cancelEnabled;
+  const row = document.getElementById('cancel-row');
+  const box = document.getElementById('cancel-box');
+  row.className = 'checkbox-row' + (cancelEnabled ? ' checked' : '');
+  box.textContent = cancelEnabled ? '✓' : '';
+}
+
+function syncPricing() {
+  const ys = parseFloat(document.getElementById('f-yes-shares').value) || 1000;
+  const yp = parseFloat(document.getElementById('f-yes-price').value) || 0.84;
+  const ns = parseFloat(document.getElementById('f-no-shares').value) || 1000;
+  const np = parseFloat(document.getElementById('f-no-price').value) || 0.17;
+  const sp = parseFloat(document.getElementById('f-spread').value) || 0.04;
+  const yPool = ys * yp;
+  const nPool = ns * np;
+  const total = yPool + nPool;
+  const yPct = Math.round(yPool / total * 100);
+  const nPct = 100 - yPct;
+  document.getElementById('yes-pool-label').textContent = '$' + yPool.toFixed(0);
+  document.getElementById('no-pool-label').textContent = '$' + nPool.toFixed(0);
+  document.getElementById('yes-pool-bar').style.width = yPct + '%';
+  document.getElementById('no-pool-bar').style.width = nPct + '%';
+  const impliedYes = yp / (yp + np);
+  document.getElementById('pricing-preview').innerHTML = `
+    <div class="price-row"><span class="price-label">YES liquidity pool</span><span class="price-val yes">$${yPool.toFixed(2)}</span></div>
+    <div class="price-row"><span class="price-label">NO liquidity pool</span><span class="price-val no">$${nPool.toFixed(2)}</span></div>
+    <div class="price-row"><span class="price-label">Total prize pool</span><span class="price-val">$${total.toFixed(2)}</span></div>
+    <div class="price-row"><span class="price-label">Implied YES probability</span><span class="price-val">${(impliedYes * 100).toFixed(1)}%</span></div>
+    <div class="price-row"><span class="price-label">P2 min spread</span><span class="price-val">${sp.toFixed(2)}</span></div>
+    <div class="price-row"><span class="price-label">Payout per YES share (gross)</span><span class="price-val yes">$${(total / ys).toFixed(4)}</span></div>
+    <div class="price-row"><span class="price-label">Payout per NO share (gross)</span><span class="price-val no">$${(total / ns).toFixed(4)}</span></div>
+  `;
+}
+
+function syncFees() {
+  const p1 = parseFloat(document.getElementById('f-ph1fee').value) || 2;
+  const p2b = parseFloat(document.getElementById('f-ph2bfee').value) || 1;
+  const p2s = parseFloat(document.getElementById('f-ph2sfee').value) || 1;
+  const win = parseFloat(document.getElementById('f-winfee').value) || 3;
+  document.getElementById('fc-ph1').textContent = p1.toFixed(1) + '%';
+  document.getElementById('fc-ph2b').textContent = p2b.toFixed(1) + '%';
+  document.getElementById('fc-ph2s').textContent = p2s.toFixed(1) + '%';
+  document.getElementById('fc-win').textContent = win.toFixed(1) + '%';
+  const yp = parseFloat(document.getElementById('f-yes-price').value) || 0.84;
+  const exQty = 100;
+  const sub = exQty * yp;
+  const fee = sub * (p1 / 100);
+  const gross = exQty * 1.01;
+  const wf = gross * (win / 100);
+  document.getElementById('fee-example').innerHTML = `
+    <div class="price-row"><span class="price-label" style="color:var(--muted);font-size:11px">Example: buy 100 YES @ $${yp}</span><span></span></div>
+    <div class="price-row"><span class="price-label">Subtotal</span><span class="price-val">$${sub.toFixed(2)}</span></div>
+    <div class="price-row"><span class="price-label">P1 fee (${p1.toFixed(1)}%)</span><span class="price-val" style="color:var(--no)">+$${fee.toFixed(2)}</span></div>
+    <div class="price-row"><span class="price-label">Total paid</span><span class="price-val">$${(sub + fee).toFixed(2)}</span></div>
+    <div class="price-row"><span class="price-label" style="margin-top:4px">If YES wins — gross payout</span><span class="price-val yes">$${gross.toFixed(2)}</span></div>
+    <div class="price-row"><span class="price-label">Win fee (${win.toFixed(1)}%)</span><span class="price-val" style="color:var(--no)">-$${wf.toFixed(2)}</span></div>
+    <div class="price-row"><span class="price-label">Net payout</span><span class="price-val yes" style="font-size:14px">$${(gross - wf).toFixed(2)}</span></div>
+  `;
+}
+
+function sync() {}
+
+function buildReview() {
+  const q = document.getElementById('f-question').value || '(not set)';
+  const cat = document.getElementById('f-cat').value;
+  const ys = document.getElementById('f-yes-shares').value || '1000';
+  const yp = document.getElementById('f-yes-price').value || '0.84';
+  const ns = document.getElementById('f-no-shares').value || '1000';
+  const np = document.getElementById('f-no-price').value || '0.17';
+  const sp = document.getElementById('f-spread').value || '0.04';
+  const open = document.getElementById('f-open').value || '—';
+  const lock = document.getElementById('f-lock').value || '—';
+  const resolve = document.getElementById('f-resolve').value || '—';
+  const p1f = document.getElementById('f-ph1fee').value || '2';
+  const p2bf = document.getElementById('f-ph2bfee').value || '1';
+  const p2sf = document.getElementById('f-ph2sfee').value || '1';
+  const wf = document.getElementById('f-winfee').value || '3';
+  const pool = (parseFloat(ys) * parseFloat(yp) + parseFloat(ns) * parseFloat(np)).toFixed(2);
+
+  document.getElementById('review-content').innerHTML = `
+    <div class="review-row"><span class="review-label">Question</span><span class="review-val">${q}</span></div>
+    <div class="review-row"><span class="review-label">Category</span><span class="review-val">${cat}</span></div>
+    <div class="review-row"><span class="review-label">YES shares / price</span><span class="review-val yes">${ys} × $${yp}</span></div>
+    <div class="review-row"><span class="review-label">NO shares / price</span><span class="review-val no">${ns} × $${np}</span></div>
+    <div class="review-row"><span class="review-label">Prize pool</span><span class="review-val">$${pool}</span></div>
+    <div class="review-row"><span class="review-label">Min spread (P2)</span><span class="review-val">${sp}</span></div>
+    <div class="review-row"><span class="review-label">Opens</span><span class="review-val">${open}</span></div>
+    <div class="review-row"><span class="review-label">Locks</span><span class="review-val">${lock}</span></div>
+    <div class="review-row"><span class="review-label">Resolves</span><span class="review-val">${resolve}</span></div>
+    <div class="review-row"><span class="review-label">P1 cancel buy</span><span class="review-val">${cancelEnabled ? 'Enabled' : 'Disabled'}</span></div>
+    <div class="review-row"><span class="review-label">Fees</span><span class="review-val">P1 ${p1f}% · P2 buy ${p2bf}% · P2 sell ${p2sf}% · win ${wf}%</span></div>
+    <div class="review-row"><span class="review-label">Resolution</span><span class="review-val"><span class="badge badge-${resType}">${resType}</span></span></div>
+    ${resType === 'auto' ? `<div class="review-row"><span class="review-label">Auto source</span><span class="review-val">${document.getElementById('f-src').value}</span></div>` : ''}
+  `;
+
+  const warns = [];
+  if (!document.getElementById('f-question').value) warns.push('Market question is empty.');
+  if (!document.getElementById('f-criteria').value) warns.push('Resolution criteria not defined — disputes are likely.');
+  if (!document.getElementById('f-open').value) warns.push('Open time not set.');
+  if (!document.getElementById('f-resolve').value) warns.push('Resolution time not set.');
+
+  const wc = document.getElementById('warn-container');
+  if (warns.length) {
+    wc.innerHTML = `<div class="warn-box">${warns.map(w => `<div class="warn-item">${w}</div>`).join('')}</div>`;
+  } else {
+    wc.innerHTML = `<div style="background:rgba(74,222,128,.06);border:1px solid var(--yes-dim);border-radius:var(--radius);padding:12px 14px;font-size:12px;color:var(--yes);margin-top:10px">All required fields complete. Ready to publish.</div>`;
+  }
+}
+
+function saveDraft() {
+  alert('Draft saved. You can return to this market from the Markets list.');
+}
+
+function publish() {
+  const q = document.getElementById('f-question').value;
+  if (!q) { alert('Please fill in the market question before publishing.'); goStep(1); return; }
+  alert('Market published successfully. It will open at the scheduled time.');
+}
+
+syncPricing();
+syncFees();
+</script>
+</body>
+</html>
