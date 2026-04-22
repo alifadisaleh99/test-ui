@@ -310,7 +310,7 @@
           <label>Visibility</label>
           <select id="f-vis">
             <option>Public</option>
-            <option>Unlisted</option>
+            <option>Draft</option>
           </select>
         </div>
       </div>
@@ -392,11 +392,6 @@
           <label>Resolves at</label>
           <input type="datetime-local" id="f-resolve" oninput="sync()">
           <div class="hint">Oracle fires or operator must submit verdict.</div>
-        </div>
-        <div class="field">
-          <label>Resolution buffer (seconds)</label>
-          <input type="number" id="f-buffer" value="30" min="0" max="300">
-          <div class="hint">Grace period before payout engine runs.</div>
         </div>
       </div>
     </div>
